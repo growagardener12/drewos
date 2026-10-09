@@ -423,6 +423,35 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closePopovers();if((
       document.head.appendChild(script);
     });
   }
+  function mediaErrorMessage(err){
+    const name=err&&err.name||'';
+    if(name==='NotFoundError'||name==='DevicesNotFoundError')return 'No camera or microphone was found. Connect or enable a device, or try another computer.';
+    if(name==='NotAllowedError'||name==='SecurityError')return 'Camera or microphone access was blocked. Allow access for this website in your browser settings, then try again.';
+    if(name==='NotReadableError'||name==='TrackStartError')return 'Your camera or microphone may be in use by another app. Close Camera, Teams, Zoom, or other apps and try again.';
+    if(name==='OverconstrainedError')return 'The selected camera or microphone does not support the requested settings. Try another device.';
+    return (err&&err.message)||'Could not start FaceTime. Check your camera and microphone settings.';
+  }
+  async function requestLocalMedia(){
+    const audio={echoCancellation:true,noiseSuppression:true,autoGainControl:true};
+    const video={width:{ideal:1280},height:{ideal:720},facingMode:'user'};
+    try{return {stream:await navigator.mediaDevices.getUserMedia({audio,video}),notice:''};}
+    catch(firstError){
+      // If a computer has no available camera (or the camera is busy), keep the call usable as audio-only.
+      if(!['NotFoundError','DevicesNotFoundError','OverconstrainedError','NotReadableError','TrackStartError'].includes(firstError&&firstError.name))throw firstError;
+      try{
+        const audioOnly=await navigator.mediaDevices.getUserMedia({audio,video:false});
+        if(audioOnly.getAudioTracks().length)return {stream:audioOnly,notice:'No camera was found, so this call is starting audio-only. Connect or enable a webcam for video.'};
+        audioOnly.getTracks().forEach(t=>t.stop());
+      }catch(audioError){console.warn('Audio-only fallback unavailable',audioError);}
+      // If there is a camera but no microphone, permit a video-only test rather than failing outright.
+      try{
+        const videoOnly=await navigator.mediaDevices.getUserMedia({audio:false,video:true});
+        if(videoOnly.getVideoTracks().length)return {stream:videoOnly,notice:'No microphone was found, so this call is starting video-only. Connect or enable a microphone for audio.'};
+        videoOnly.getTracks().forEach(t=>t.stop());
+      }catch(videoError){console.warn('Video-only fallback unavailable',videoError);}
+      throw firstError;
+    }
+  }
   async function startCall(room, role){
     if(ftJoining)return;ftJoining=true;
     try{
@@ -439,10 +468,22 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closePopovers();if((
       if($('ftRemoteTitle'))$('ftRemoteTitle').textContent=role==='caller'?'Waiting for someone to join':'Connecting to call';
       if($('ftRemoteHint'))$('ftRemoteHint').textContent=role==='caller'?'Share your invite link to connect.':'Checking for the other participant…';
       if($('ftLocalTile'))$('ftLocalTile').classList.remove('camera-off');
-      showCallView();callStatus('Allow camera and microphone access');
-      ftLocalStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:{width:{ideal:1280},height:{ideal:720},facingMode:'user'}});
+      showCallView();callStatus('Checking camera and microphone…');
+      const mediaResult=await requestLocalMedia();
+      ftLocalStream=mediaResult.stream;
+      const hasAudio=ftLocalStream.getAudioTracks().length>0;
+      const hasVideo=ftLocalStream.getVideoTracks().length>0;
+      ftMicOn=hasAudio;ftCameraOn=hasVideo;
       $('ftLocalVideo').srcObject=ftLocalStream;
       ftOriginalVideoTrack=ftLocalStream.getVideoTracks()[0]||null;
+      if($('ftLocalTile'))$('ftLocalTile').classList.toggle('camera-off',!hasVideo);
+      if($('ftMicButton'))$('ftMicButton').classList.toggle('off',!hasAudio);
+      if($('ftMicLabel'))$('ftMicLabel').textContent=hasAudio?'Mute':'No microphone';
+      if($('ftMicIcon'))$('ftMicIcon').textContent=hasAudio?'🎙':'🔇';
+      if($('ftCameraButton'))$('ftCameraButton').classList.toggle('off',!hasVideo);
+      if($('ftCameraLabel'))$('ftCameraLabel').textContent=hasVideo?'Camera':'No camera';
+      if($('ftCameraIcon'))$('ftCameraIcon').textContent=hasVideo?'▣':'⊘';
+      if(mediaResult.notice)showToast(mediaResult.notice);
       ftClient=window.supabase.createClient(cfg.url,cfg.key,{auth:{persistSession:false,autoRefreshToken:false},realtime:{params:{eventsPerSecond:20}}});
       ftPc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]});
       ftLocalStream.getTracks().forEach(track=>ftPc.addTrack(track,ftLocalStream));
@@ -462,7 +503,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closePopovers();if((
           if(role==='caller')showToast('Invite link ready. Click Copy link to share it.');
         }else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'||status==='CLOSED'){callStatus('Realtime service error: '+status+'. Check your project URL, public key, and Realtime access.');updateConfiguredUI(false,'Could not connect. Check project URL, public key, and Realtime access.');}
       });
-    }catch(err){console.error(err);await cleanupCall(true);ftShowHome();callToast(err.name==='NotAllowedError'?'Camera or microphone permission was denied. Allow access in your browser settings.':(err.message||'Could not start FaceTime.'));}
+    }catch(err){console.error(err);await cleanupCall(true);ftShowHome();callToast(mediaErrorMessage(err));}
     finally{ftJoining=false;}
   }
   async function sendSignal(kind, extra={}){if(!ftChannel)return;return ftChannel.send({type:'broadcast',event:'signal',payload:{from:ftPeerId,kind,...extra}})}
@@ -489,8 +530,8 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closePopovers();if((
     }
     if(p.kind==='hangup'){callStatus('The other person ended the call.');await ftEndCall(true);showToast('FaceTime call ended by the other person');}
   }
-  window.ftToggleMic=function(){if(!ftLocalStream)return;ftMicOn=!ftMicOn;ftLocalStream.getAudioTracks().forEach(t=>t.enabled=ftMicOn);$('ftMicButton').classList.toggle('off',!ftMicOn);$('ftMicLabel').textContent=ftMicOn?'Mute':'Unmute';$('ftMicIcon').textContent=ftMicOn?'🎙':'🔇';$('ftMicButton').setAttribute('aria-label',ftMicOn?'Mute microphone':'Unmute microphone')};
-  window.ftToggleCamera=function(){if(!ftLocalStream)return;ftCameraOn=!ftCameraOn;ftLocalStream.getVideoTracks().forEach(t=>t.enabled=ftCameraOn);$('ftCameraButton').classList.toggle('off',!ftCameraOn);$('ftCameraLabel').textContent=ftCameraOn?'Camera':'Camera off';$('ftCameraButton').setAttribute('aria-label',ftCameraOn?'Turn camera off':'Turn camera on');$('ftLocalTile').classList.toggle('camera-off',!ftCameraOn)};
+  window.ftToggleMic=function(){if(!ftLocalStream)return;const tracks=ftLocalStream.getAudioTracks();if(!tracks.length){showToast('No microphone is available on this device. Connect or enable one, then restart the call.');return}ftMicOn=!ftMicOn;tracks.forEach(t=>t.enabled=ftMicOn);$('ftMicButton').classList.toggle('off',!ftMicOn);$('ftMicLabel').textContent=ftMicOn?'Mute':'Unmute';$('ftMicIcon').textContent=ftMicOn?'🎙':'🔇';$('ftMicButton').setAttribute('aria-label',ftMicOn?'Mute microphone':'Unmute microphone')};
+  window.ftToggleCamera=function(){if(!ftLocalStream)return;const tracks=ftLocalStream.getVideoTracks();if(!tracks.length){showToast('No camera is available on this device. Connect or enable one, then restart the call.');return}ftCameraOn=!ftCameraOn;tracks.forEach(t=>t.enabled=ftCameraOn);$('ftCameraButton').classList.toggle('off',!ftCameraOn);$('ftCameraLabel').textContent=ftCameraOn?'Camera':'Camera off';$('ftCameraIcon').textContent=ftCameraOn?'▣':'⊘';$('ftCameraButton').setAttribute('aria-label',ftCameraOn?'Turn camera off':'Turn camera on');$('ftLocalTile').classList.toggle('camera-off',!ftCameraOn)};
   window.ftShareScreen=async function(){if(!ftPc||!ftLocalStream){showToast('Start a call before sharing your screen');return}if(!navigator.mediaDevices?.getDisplayMedia){showToast('Screen sharing is not supported in this browser');return}try{if(ftScreenStream){ftScreenStream.getTracks().forEach(t=>t.stop());ftScreenStream=null;const sender=ftPc.getSenders().find(x=>x.track&&x.track.kind==='video');if(sender&&ftOriginalVideoTrack)await sender.replaceTrack(ftOriginalVideoTrack);$('ftLocalVideo').srcObject=ftLocalStream;showToast('Screen sharing stopped');return}ftScreenStream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});const screenTrack=ftScreenStream.getVideoTracks()[0];const sender=ftPc.getSenders().find(x=>x.track&&x.track.kind==='video');if(sender&&screenTrack)await sender.replaceTrack(screenTrack);$('ftLocalVideo').srcObject=ftScreenStream;screenTrack.addEventListener('ended',async()=>{if(!ftPc)return;const s=ftPc.getSenders().find(x=>x.track&&x.track.kind==='video');if(s&&ftOriginalVideoTrack)await s.replaceTrack(ftOriginalVideoTrack);ftScreenStream=null;$('ftLocalVideo').srcObject=ftLocalStream});showToast('You are sharing your screen')}catch(e){if(e.name!=='NotAllowedError')showToast('Could not start screen sharing')}};
   async function cleanupCall(silent){
     if(ftHelloTimer){clearInterval(ftHelloTimer);ftHelloTimer=null}
