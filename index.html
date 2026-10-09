@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DrewOS — Desktop</title>
+<style>
+:root{--glass:rgba(245,245,250,.48);--glass-strong:rgba(245,245,250,.72);--line:rgba(255,255,255,.42);--shadow:0 18px 55px rgba(24,23,55,.24);--text:#171722}
+*{box-sizing:border-box}html,body{height:100%;margin:0;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;color:var(--text);user-select:none}
+body{background:#6f7fe9}
+.desktop{position:relative;width:100%;height:100%;overflow:hidden;background:
+radial-gradient(ellipse at 0% 5%,rgba(255,224,158,.98) 0,rgba(255,199,137,.7) 18%,transparent 40%),
+radial-gradient(ellipse at 100% 100%,#1c91d6 0,transparent 43%),
+radial-gradient(ellipse at 70% 0%,#ff9b82 0,transparent 35%),
+linear-gradient(135deg,#ffdda4 0%,#f6a8b6 30%,#a17eea 58%,#38a5db 100%)}
+.desktop:before{content:"";position:absolute;inset:-20%;background:conic-gradient(from 225deg at 30% 45%,transparent 0deg,#fff1bf 22deg,rgba(255,255,255,.22) 42deg,transparent 68deg,#ffbc7c 100deg,transparent 140deg);filter:blur(34px);opacity:.7;transform:rotate(-12deg);pointer-events:none}
+.menubar{height:30px;position:absolute;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;gap:18px;padding:0 14px;background:rgba(250,248,255,.42);backdrop-filter:blur(35px) saturate(1.5);font-size:12px;font-weight:550}
+.apple{font-size:17px;line-height:1}.menu-left,.menu-right{display:flex;align-items:center;gap:15px}.menu-right{margin-left:auto;gap:13px}.menu-item{cursor:pointer}.menu-item:hover{opacity:.65}.tiny-icon{font-size:14px}
+.desktop-icons{position:absolute;right:20px;top:54px;display:flex;flex-direction:column;gap:18px;z-index:2}
+.desktop-icon{width:76px;text-align:center;color:white;font-size:11px;text-shadow:0 1px 4px #3338;cursor:pointer}.folder{width:44px;height:35px;margin:0 auto 5px;position:relative;border-radius:6px;background:linear-gradient(#b8d9ff,#6ca4ef);box-shadow:0 4px 8px #27355a45}.folder:before{content:"";position:absolute;top:-5px;left:3px;width:18px;height:9px;border-radius:4px 4px 0 0;background:#c7e2ff}
+.widget-stack{position:absolute;top:54px;right:116px;width:242px;display:flex;flex-direction:column;gap:10px;z-index:2}
+.widget{background:rgba(22,29,46,.65);color:#fff;border:1px solid #ffffff38;border-radius:18px;padding:13px;backdrop-filter:blur(28px);box-shadow:0 8px 28px #25234c20}
+.weather{height:114px;display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(140deg,rgba(39,99,167,.68),rgba(25,34,67,.7))}
+.weather-top{display:flex;justify-content:space-between;font-size:11px;opacity:.9}.temp{font-size:36px;font-weight:250;letter-spacing:-2px}.weather-bottom{font-size:11px;display:flex;justify-content:space-between}
+.clock-widget{height:86px;display:flex;align-items:center;justify-content:center;gap:13px}.clock-face{width:58px;height:58px;border-radius:50%;background:#f5f0dd;position:relative;border:3px solid #d7d1c2;box-shadow:inset 0 0 0 2px #fff}.clock-face:before{content:"";position:absolute;width:2px;height:18px;background:#444;left:26px;top:10px;transform:rotate(-15deg);transform-origin:bottom}.clock-face:after{content:"";position:absolute;width:17px;height:2px;background:#444;left:27px;top:27px;transform:rotate(20deg);transform-origin:left}.clock-info strong{display:block;font-size:13px}.clock-info small{font-size:10px;opacity:.7}
+.calendar-widget{height:98px;background:rgba(245,245,250,.76);color:#202033}.calendar-head{font-size:10px;color:#e45162;font-weight:700}.calendar-day{font-size:32px;font-weight:300;margin-top:3px}.calendar-note{font-size:10px;opacity:.7}
+.dock-wrap{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);z-index:120;max-width:calc(100% - 20px)}
+.dock{display:flex;align-items:flex-end;gap:8px;padding:8px 10px 7px;background:rgba(248,246,255,.45);border:1px solid rgba(255,255,255,.55);border-radius:22px;backdrop-filter:blur(32px) saturate(1.6);box-shadow:0 10px 35px #25234c25}
+.dock-app{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-size:25px;cursor:pointer;position:relative;transition:transform .16s cubic-bezier(.2,.8,.2,1);box-shadow:inset 0 1px 1px #ffffff88,0 2px 4px #16162a24}
+.dock-app:hover{transform:translateY(-10px) scale(1.12)}.dock-app:after{content:"";position:absolute;bottom:-5px;width:4px;height:4px;border-radius:50%;background:#343342;opacity:0}.dock-app.running:after{opacity:.8}
+.dock-sep{width:1px;height:35px;background:#ffffffa8;margin:0 2px}
+.app-finder{background:linear-gradient(135deg,#e6faff,#7eb9e7)}.app-safari{background:linear-gradient(135deg,#d7f5ff,#3b9cf0)}.app-messages{background:linear-gradient(135deg,#b3f5a2,#38bd6b)}.app-music{background:linear-gradient(135deg,#ffb3d2,#f04468)}.app-photos{background:conic-gradient(#f6c54b,#ee6a7d,#9d75e8,#54bde7,#73cf8c,#f6c54b)}.app-settings{background:linear-gradient(135deg,#f7f7fb,#9297a5)}.app-notes{background:linear-gradient(#fff,#eee4b7)}.app-meet{background:linear-gradient(135deg,#8cc7ff,#4a75e8)}
+.window{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);width:min(760px,calc(100% - 36px));height:min(500px,calc(100% - 110px));min-height:300px;display:none;flex-direction:column;overflow:hidden;border-radius:14px;background:rgba(250,250,253,.82);border:1px solid #ffffffa8;backdrop-filter:blur(45px) saturate(1.6);box-shadow:var(--shadow);z-index:30}
+.window.open{display:flex;animation:appear .2s ease-out}.window.maximized{width:calc(100% - 24px);height:calc(100% - 54px);top:calc(50% + 12px)}
+@keyframes appear{from{opacity:0;transform:translate(-50%,-48%) scale(.97)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+.titlebar{height:42px;display:flex;align-items:center;padding:0 14px;gap:8px;border-bottom:1px solid #8883;background:#ffffff55;flex-shrink:0;cursor:grab}.traffic{display:flex;gap:7px}.traffic button{width:12px;height:12px;border:0;border-radius:50%;padding:0;cursor:pointer}.close{background:#ff6058}.minimize{background:#ffbd2e}.zoom{background:#28c840}.window-title{font-size:12px;font-weight:650;margin:auto;transform:translateX(-20px)}.window-body{padding:18px;overflow:auto;flex:1}
+.finder-body{display:grid;grid-template-columns:170px 1fr;padding:0}.sidebar{padding:18px 12px;background:#e8e8ee80;border-right:1px solid #8882;font-size:12px}.sidebar div{padding:8px 10px;border-radius:7px;margin:2px 0}.sidebar div:first-child{background:#3478f6;color:white}.file-area{padding:22px;display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));align-content:start;gap:20px}.file{font-size:11px;text-align:center;cursor:pointer}.file .file-emoji{font-size:37px;display:block;margin-bottom:7px}
+.settings-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}.setting-card{padding:18px;border-radius:14px;background:#ffffffa8;text-align:center;font-size:12px}.setting-card span{display:block;font-size:30px;margin-bottom:8px}
+.safari-bar{display:flex;gap:8px;padding:9px 14px;background:#eeeef4aa}.safari-bar input{border:0;border-radius:8px;background:#fff9;flex:1;padding:7px 12px;outline:none}.safari-page{margin:18px auto;max-width:500px;text-align:center;padding:25px}.safari-page h1{font-size:42px;font-weight:650;letter-spacing:-2px}.searchbox{padding:13px 18px;border-radius:30px;border:1px solid #aaa5;text-align:left;font-size:12px;color:#777}
+.notes-area{width:100%;height:100%;resize:none;border:0;outline:0;background:transparent;font:15px/1.6 inherit}
+.notification-center{position:absolute;right:15px;top:40px;width:310px;z-index:150;display:none;flex-direction:column;gap:10px}.notification-center.open{display:flex;animation:appear .18s ease-out}.notification{border-radius:17px;background:rgba(247,246,252,.74);backdrop-filter:blur(35px);border:1px solid #fff9;padding:13px 14px;box-shadow:0 8px 28px #3332;font-size:12px}.notification-head{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-weight:650}.notification-app{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;background:#fff;font-size:16px}.notification small{float:right;color:#777;font-weight:400}.notification p{margin:0 0 0 32px;line-height:1.4}
+.control-center{position:absolute;right:12px;top:40px;width:290px;padding:14px;border-radius:22px;z-index:151;display:none;background:rgba(245,244,251,.82);backdrop-filter:blur(38px);border:1px solid #fff9;box-shadow:var(--shadow)}.control-center.open{display:block}.control-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.control-tile{background:#ffffffad;border-radius:13px;padding:13px;font-size:12px;cursor:pointer}.control-tile b{display:block;font-size:19px;margin-bottom:8px}.brightness{margin-top:10px;padding:12px;border-radius:12px;background:#ffffffad;font-size:12px}.brightness input{width:100%}
+.menu-pop{position:absolute;top:28px;left:10px;width:220px;background:#f7f6f2e8;backdrop-filter:blur(28px);border-radius:10px;padding:6px;box-shadow:var(--shadow);display:none;z-index:200;font-size:13px}.menu-pop.open{display:block}.menu-pop div{padding:8px 10px;border-radius:6px;cursor:pointer}.menu-pop div:hover{background:#3478f6;color:white}
+.toast{position:absolute;top:40px;left:50%;transform:translateX(-50%);background:#ffffffd9;backdrop-filter:blur(20px);padding:10px 16px;border-radius:12px;font-size:12px;box-shadow:var(--shadow);z-index:300;display:none}
+@media(max-width:700px){.widget-stack{right:12px;top:52px;width:190px}.desktop-icons{display:none}.widget{border-radius:14px}.dock{gap:5px;padding:7px}.dock-app{width:38px;height:38px;font-size:21px;border-radius:10px}.menubar{gap:10px;padding:0 9px}.menu-left{gap:10px}.menu-right{gap:8px}.menu-hide{display:none}.window{height:calc(100% - 100px)}.finder-body{grid-template-columns:110px 1fr}.settings-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="desktop" id="desktop">
+  <div class="menubar">
+    <div class="apple menu-item" id="appleMenu">●</div>
+    <div class="menu-left"><span class="menu-item" id="activeApp">DrewOS</span><span class="menu-item menu-hide" onclick="showToast('File menu')">File</span><span class="menu-item menu-hide" onclick="showToast('Edit menu')">Edit</span><span class="menu-item menu-hide" onclick="showToast('View menu')">View</span><span class="menu-item menu-hide" onclick="showToast('Window menu')">Window</span></div>
+    <div class="menu-right"><span class="tiny-icon">▰</span><span class="tiny-icon">⌁</span><span class="tiny-icon">⌕</span><span class="tiny-icon menu-item" id="controlBtn">☷</span><span class="tiny-icon menu-item" id="notifyBtn">☷</span><span id="dateText">Mon Jun 10</span><span id="timeText">9:41 AM</span></div>
+  </div>
+  <div class="desktop-icons">
+    <div class="desktop-icon" onclick="openApp('finder')"><div class="folder"></div>Macintosh HD</div>
+    <div class="desktop-icon" onclick="openApp('notes')"><div style="font-size:32px;margin-bottom:4px">🗒️</div>Quick Notes</div>
+    <div class="desktop-icon" onclick="openApp('finder')"><div style="font-size:32px;margin-bottom:4px">📁</div>Projects</div>
+  </div>
+  <div class="widget-stack">
+    <div class="widget weather"><div class="weather-top"><span>📍 LAKE VIEW</span><span>Weather</span></div><div style="display:flex;align-items:center;gap:10px"><span style="font-size:34px">☀️</span><span class="temp">75°</span></div><div class="weather-bottom"><span>Sunny</span><span>H: 79° L: 61°</span></div></div>
+    <div class="widget clock-widget"><div class="clock-face"></div><div class="clock-info"><strong>World Clock</strong><small>Cupertino<br>Pacific Time</small></div></div>
+    <div class="widget calendar-widget"><div class="calendar-head" id="calendarMonth">OCTOBER</div><div class="calendar-day" id="calendarDay">9</div><div class="calendar-note">Nothing scheduled today</div></div>
+  </div>
+  <div class="window" id="finder">
+    <div class="titlebar"><div class="traffic"><button class="close" onclick="closeApp('finder')"></button><button class="minimize" onclick="closeApp('finder')"></button><button class="zoom" onclick="maximize('finder')"></button></div><div class="window-title">Finder</div></div>
+    <div class="window-body finder-body"><aside class="sidebar"><div>⭐ Favorites</div><div>AirDrop</div><div>Recents</div><div>Applications</div><div>Desktop</div><div>Documents</div><div>Downloads</div><hr><div>iCloud Drive</div><div>Macintosh HD</div></aside><main class="file-area"><div class="file" onclick="openApp('safari')"><span class="file-emoji">🌐</span>Safari</div><div class="file" onclick="openApp('notes')"><span class="file-emoji">📝</span>Notes</div><div class="file" onclick="openApp('settings')"><span class="file-emoji">⚙️</span>System Settings</div><div class="file" onclick="openApp('meet')"><span class="file-emoji">📹</span>Drew Meet</div><div class="file"><span class="file-emoji">📁</span>Projects</div><div class="file"><span class="file-emoji">🖼️</span>Pictures</div></main></div>
+  </div>
+  <div class="window" id="safari">
+    <div class="titlebar"><div class="traffic"><button class="close" onclick="closeApp('safari')"></button><button class="minimize" onclick="closeApp('safari')"></button><button class="zoom" onclick="maximize('safari')"></button></div><div class="window-title">Safari</div></div>
+    <div class="safari-bar"><span>‹</span><span>›</span><span>↻</span><input id="urlInput" value="https://drewos.local" aria-label="Address bar"><button onclick="navigateSafari()">Go</button></div>
+    <div class="window-body"><div class="safari-page"><div style="font-size:44px">🌐</div><h1>DrewOS</h1><p style="color:#686878">A desktop that feels like home.</p><div class="searchbox" onclick="document.getElementById('urlInput').focus()">⌕ &nbsp; Search the web or enter a website</div><p style="font-size:12px;color:#888;margin-top:28px">This is a frontend demo. Website navigation is not connected yet.</p></div></div>
+  </div>
+  <div class="window" id="settings">
+    <div class="titlebar"><div class="traffic"><button class="close" onclick="closeApp('settings')"></button><button class="minimize" onclick="closeApp('settings')"></button><button class="zoom" onclick="maximize('settings')"></button></div><div class="window-title">System Settings</div></div>
+    <div class="window-body"><h2 style="margin-top:0;font-weight:650">System Settings</h2><div class="settings-grid"><div class="setting-card"><span>👤</span>Apple Account</div><div class="setting-card"><span>📶</span>Wi-Fi <small>Connected</small></div><div class="setting-card"><span>🔵</span>Bluetooth</div><div class="setting-card"><span>🖼️</span>Wallpaper</div><div class="setting-card"><span>🔔</span>Notifications</div><div class="setting-card"><span>🔒</span>Privacy & Security</div><div class="setting-card"><span>🖥️</span>Displays</div><div class="setting-card"><span>⌨️</span>Keyboard</div><div class="setting-card"><span>♿</span>Accessibility</div></div></div>
+  </div>
+  <div class="window" id="notes">
+    <div class="titlebar"><div class="traffic"><button class="close" onclick="closeApp('notes')"></button><button class="minimize" onclick="closeApp('notes')"></button><button class="zoom" onclick="maximize('notes')"></button></div><div class="window-title">Quick Notes</div></div>
+    <div class="window-body"><textarea class="notes-area" placeholder="Start typing your note…"></textarea></div>
+  </div>
+  <div class="window" id="messages">
+    <div class="titlebar"><div class="traffic"><button class="close" onclick="closeApp('messages')"></button><button class="minimize" onclick="closeApp('messages')"></button><button class="zoom" onclick="maximize('messages')"></button></div><div class="window-title">Messages</div></div>
+    <div class="window-body" style="display:flex;align-items:center;justify-content:center;text-align:center"><div><div style="font-size:48px">💬</div><h2>Messages</h2><p style="color:#777">Your conversations will live here.</p><button onclick="showToast('Messaging will be connected later')">New Message</button></div></div>
+  </div>
+  <div class="window" id="music">
+    <div class="titlebar"><div class="traffic"><button class="close" onclick="closeApp('music')"></button><button class="minimize" onclick="closeApp('music')"></button><button class="zoom" onclick="maximize('music')"></button></div><div class="window-title">Music</div></div>
+    <div class="window-body" style="text-align:center"><div style="font-size:56px;margin:25px">🎵</div><h2>Your music library</h2><p style="color:#777">A music player can be connected here later.</p><button onclick="showToast('Music player is a frontend placeholder')">Browse Music</button></div>
+  </div>
+  <div class="window" id="photos">
+    <div class="titlebar"><div class="traffic"><button class="close" onclick="closeApp('photos')"></button><button class="minimize" onclick="closeApp('photos')"></button><button class="zoom" onclick="maximize('photos')"></button></div><div class="window-title">Photos</div></div>
+    <div class="window-body" style="text-align:center"><div style="font-size:56px;margin:25px">🌈</div><h2>Photos</h2><p style="color:#777">Your photo library will appear here.</p></div>
+  </div>
+  <div class="window" id="meet">
+    <div class="titlebar"><div class="traffic"><button class="close" onclick="closeApp('meet')"></button><button class="minimize" onclick="closeApp('meet')"></button><button class="zoom" onclick="maximize('meet')"></button></div><div class="window-title">Drew Meet</div></div>
+    <div class="window-body" style="text-align:center"><div style="font-size:52px;margin:20px">📹</div><h2>Drew Meet</h2><p style="color:#777">This is a desktop mockup. Camera and real meetings will be connected after the backend is ready.</p><button onclick="showToast('Meet backend not connected yet')">Start a meeting</button></div>
+  </div>
+  <div class="notification-center" id="notifications">
+    <div class="notification"><div class="notification-head"><div class="notification-app">🟠</div>Headspace <small>now</small></div><p>Look for balance. The middle is the best bit.</p></div>
+    <div class="notification"><div class="notification-head"><div class="notification-app">🦉</div>Duolingo <small>now</small></div><p>Hi, it's Duo 👋<br>Got 3 minutes to practice? Make time for a healthy habit in your day!</p></div>
+  </div>
+  <div class="control-center" id="controlCenter"><div style="font-weight:700;margin:2px 3px 12px">Control Center</div><div class="control-grid"><div class="control-tile" onclick="toggleTile(this)"><b>📶</b>Wi-Fi<br><small>On</small></div><div class="control-tile" onclick="toggleTile(this)"><b>🔵</b>Bluetooth<br><small>On</small></div><div class="control-tile" onclick="toggleTile(this)"><b>🌙</b>Focus<br><small>Off</small></div><div class="control-tile" onclick="toggleTile(this)"><b>🖥️</b>Screen Mirroring<br><small>Not connected</small></div></div><div class="brightness">Display brightness <input type="range" min="30" max="100" value="85" oninput="document.getElementById('desktop').style.filter='brightness('+this.value/85+')'"></div><div class="brightness">Sound <input type="range" min="0" max="100" value="70"></div></div>
+  <div class="menu-pop" id="applePop"><div onclick="showToast('DrewOS · Version 1.0')">About This DrewOS</div><div onclick="openApp('settings')">System Settings…</div><div onclick="showToast('Lock screen coming soon')">Lock Screen</div><div onclick="location.reload()">Restart DrewOS…</div></div>
+  <div class="toast" id="toast"></div>
+  <div class="dock-wrap"><div class="dock">
+    <div class="dock-app app-finder running" title="Finder" onclick="openApp('finder')">🙂</div>
+    <div class="dock-app app-safari" title="Safari" onclick="openApp('safari')">🧭</div>
+    <div class="dock-app app-messages" title="Messages" onclick="openApp('messages')">💬</div>
+    <div class="dock-app app-music" title="Music" onclick="openApp('music')">🎵</div>
+    <div class="dock-app app-photos" title="Photos" onclick="openApp('photos')">🌈</div>
+    <div class="dock-app app-notes" title="Notes" onclick="openApp('notes')">📝</div>
+    <div class="dock-sep"></div>
+    <div class="dock-app app-meet" title="Drew Meet" onclick="openApp('meet')">📹</div>
+    <div class="dock-sep"></div>
+    <div class="dock-app app-settings" title="System Settings" onclick="openApp('settings')">⚙️</div>
+    <div class="dock-app" title="Trash" onclick="showToast('Trash is empty')" style="background:linear-gradient(135deg,#e5f8ff,#a9d5e9)">🗑️</div>
+  </div></div>
+</div>
+<script>
+const appNames={finder:'Finder',safari:'Safari',settings:'System Settings',notes:'Notes',messages:'Messages',music:'Music',photos:'Photos',meet:'Drew Meet'};
+let z=31;
+function openApp(id){const w=document.getElementById(id);if(!w)return;document.querySelectorAll('.window').forEach(x=>x.style.zIndex=30);w.classList.add('open');w.style.zIndex=++z;document.getElementById('activeApp').textContent=appNames[id]||'DrewOS';document.querySelectorAll('.dock-app').forEach(x=>{if((x.getAttribute('title')||'').toLowerCase()===(appNames[id]||'').toLowerCase())x.classList.add('running')});closePopovers()}
+function closeApp(id){document.getElementById(id).classList.remove('open','maximized');document.getElementById('activeApp').textContent='DrewOS'}
+function maximize(id){document.getElementById(id).classList.toggle('maximized')}
+function closePopovers(){document.getElementById('applePop').classList.remove('open');document.getElementById('controlCenter').classList.remove('open');document.getElementById('notifications').classList.remove('open')}
+document.getElementById('appleMenu').addEventListener('click',e=>{e.stopPropagation();document.getElementById('applePop').classList.toggle('open');document.getElementById('controlCenter').classList.remove('open');document.getElementById('notifications').classList.remove('open')});
+document.getElementById('controlBtn').addEventListener('click',e=>{e.stopPropagation();document.getElementById('controlCenter').classList.toggle('open');document.getElementById('notifications').classList.remove('open');document.getElementById('applePop').classList.remove('open')});
+document.getElementById('notifyBtn').addEventListener('click',e=>{e.stopPropagation();document.getElementById('notifications').classList.toggle('open');document.getElementById('controlCenter').classList.remove('open');document.getElementById('applePop').classList.remove('open')});
+document.addEventListener('click',e=>{if(!e.target.closest('.menu-pop')&&!e.target.closest('#appleMenu')&&!e.target.closest('#controlCenter')&&!e.target.closest('#controlBtn')&&!e.target.closest('#notifications')&&!e.target.closest('#notifyBtn'))closePopovers()});
+function toggleTile(el){const small=el.querySelector('small');const on=small.textContent==='On';small.textContent=on?'Off':'On';el.style.background=on?'#ffffff72':'#b9d4ff'}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>t.style.display='none',2200)}
+function navigateSafari(){showToast('Browser navigation is not wired up in this prototype')}
+function updateTime(){const now=new Date();document.getElementById('timeText').textContent=now.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});document.getElementById('dateText').textContent=now.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'});document.getElementById('calendarMonth').textContent=now.toLocaleDateString([],{month:'long'}).toUpperCase();document.getElementById('calendarDay').textContent=now.getDate()}
+updateTime();setInterval(updateTime,15000);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closePopovers();if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='f'){e.preventDefault();openApp('finder')}});
+document.querySelectorAll('.window').forEach(w=>{const bar=w.querySelector('.titlebar');bar.addEventListener('dblclick',()=>maximize(w.id))});
+</script>
+</body>
+</html>
